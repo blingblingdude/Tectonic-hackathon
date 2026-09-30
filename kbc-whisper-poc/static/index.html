@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KBC Whisper Demo</title>
+<style>
+:root{
+  --navy:#00305e;--navy2:#0a4d8c;--cyan:#00aeef;--cyan-soft:#e3f6fd;
+  --bg:#eaf0f6;--ink:#12263a;--muted:#5d7085;--line:#dbe4ee;--card:#fff;
+  --ok:#14936a;--ok-soft:#e2f5ee;--warn:#b86e00;--warn-soft:#fff3dd;--bad:#c23b3b;--bad-soft:#fde8e8;
+  --kbc:#0a4d8c;--kbc-soft:#e4eef9;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:disabled{cursor:not-allowed}
+a{color:var(--navy2)}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:48px;align-items:start}
+@media (max-width:920px){.wrap{grid-template-columns:minmax(0,1fr);gap:28px}.phone-col{order:-1;justify-self:center;max-width:100%}}
+.phone-col{position:sticky;top:24px}
+@media (max-width:920px){.phone-col{position:static}}
+
+/* ---------- Left panel ---------- */
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy2);font-weight:700}
+.apistat{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:#dfe7ef;color:var(--muted)}
+.apistat i{width:8px;height:8px;border-radius:50%;background:#9aabbc}
+.apistat.on{background:var(--ok-soft);color:var(--ok)}.apistat.on i{background:var(--ok)}
+.apistat.off{background:var(--bad-soft);color:var(--bad)}.apistat.off i{background:var(--bad)}
+h1{font-size:34px;line-height:1.1;margin:8px 0 12px;color:var(--navy)}
+.lead{color:var(--muted);font-size:16px;line-height:1.55;margin:0 0 26px;max-width:600px}
+.offline{display:none;background:var(--bad-soft);color:#7a1f1f;border-radius:14px;padding:14px 16px;margin:0 0 22px;font-size:14px;line-height:1.5;max-width:600px}
+.offline.show{display:block}
+.offline code{font-family:var(--mono);background:#fff;padding:1px 6px;border-radius:5px}
+.offline button{margin-top:8px;font-weight:700;color:var(--bad);text-decoration:underline}
+.label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px}
+.scen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:24px}
+@media (max-width:560px){.scen{grid-template-columns:1fr}}
+.sc{background:var(--card);border:2px solid transparent;border-radius:16px;padding:14px;text-align:left;box-shadow:0 1px 2px rgba(0,40,80,.06);transition:.2s}
+.sc:hover{border-color:var(--line)}
+.sc.on{border-color:var(--cyan);box-shadow:0 6px 20px rgba(0,174,239,.18)}
+.sc .ic{font-size:22px}
+.sc b{display:block;margin:8px 0 2px;font-size:15px}
+.sc span{font-size:13px;color:var(--muted);line-height:1.4}
+.seg{display:inline-flex;background:#d8e3ee;border-radius:12px;padding:4px;margin-bottom:10px;flex-wrap:wrap}
+.seg button{padding:9px 14px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.subseg{margin:-10px 0 24px}
+.modehint{font-size:14px;color:var(--muted);line-height:1.5;margin:0 0 24px;max-width:600px}
+.runrow{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.run{background:var(--navy);color:#fff;padding:14px 22px;border-radius:14px;font-weight:700;font-size:15px;display:inline-flex;gap:10px;align-items:center;box-shadow:0 6px 18px rgba(0,48,94,.25)}
+.run:hover{background:var(--navy2)}
+.run:disabled{background:#8fa3b8;box-shadow:none}
+.ghost{color:var(--navy2);font-weight:600;font-size:14px;padding:14px 8px}
+.endpoint{overflow-wrap:anywhere;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
+.how{margin-top:20px;background:var(--card);border-radius:18px;padding:20px 22px;box-shadow:0 1px 2px rgba(0,40,80,.06);max-width:600px}
+.how h3{margin:0 0 14px;font-size:16px;color:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.how h3 small{font-size:12px;font-weight:600;color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:10px 0;opacity:.38;transition:opacity .4s}
+.steps li.lit{opacity:1}
+.steps li+li{border-top:1px dashed var(--line)}
+.dot{width:28px;height:28px;border-radius:50%;background:var(--line);color:var(--muted);display:grid;place-items:center;font-size:13px;font-weight:700;transition:.4s}
+.lit .dot{background:var(--cyan);color:#fff}
+.lit.suppressed .dot{background:var(--bad)}
+.lit.skipped .dot{background:#9aabbc}
+.steps b{font-size:14px;display:block}
+.steps span{font-size:13px;color:var(--muted);line-height:1.45}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:1px}
+.tag.partner{background:var(--ok-soft);color:var(--ok)}
+.tag.kbc{background:var(--kbc-soft);color:var(--kbc)}
+.tag.bank{background:#eef3f8;color:var(--muted)}
+.tag.suppressed{background:var(--bad-soft);color:var(--bad)}
+.unmute{margin-top:12px;font-size:13px;font-weight:700;color:var(--navy2);text-decoration:underline}
+.share{margin:0 0 24px;background:var(--card);border-radius:18px;padding:8px 18px;box-shadow:0 1px 2px rgba(0,40,80,.06);max-width:600px}
+.prow{display:flex;align-items:center;gap:12px;padding:12px 0}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow .pic{width:36px;height:36px;border-radius:10px;background:#eef3f8;display:grid;place-items:center;font-size:18px;flex:none}
+.prow .pt2{flex:1;min-width:0}
+.prow .pt2 b{font-size:14px}
+.prow .pt2 span{display:block;font-size:12px;color:var(--muted);line-height:1.4}
+.prow .st{font-size:11px;font-weight:700;margin-left:6px}
+.prow .st.on{color:var(--ok)}.prow .st.off{color:var(--muted)}
+.prow.cur .pic{background:var(--cyan-soft);box-shadow:0 0 0 2px var(--cyan)}
+.used{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan);margin-left:6px}
+.sw{width:44px;height:26px;border-radius:13px;background:#c5d2df;position:relative;transition:.25s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.25s}
+.sw.on{background:var(--ok)}.sw.on::after{left:21px}
+.sw:disabled{opacity:.5}
+.log{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:12px;max-height:340px;overflow:auto}
+.log li+li{border-top:1px solid var(--line)}
+.log summary{cursor:pointer;padding:7px 0;display:flex;gap:10px;align-items:baseline;list-style:none}
+.log summary::-webkit-details-marker{display:none}
+.log .m{font-weight:800;width:52px;flex:none}
+.log .p{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.log .s{font-weight:800}.log .s.ok{color:var(--ok)}.log .s.err{color:var(--bad)}
+.log .t{color:var(--muted);width:52px;text-align:right;flex:none}
+.log pre{margin:0 0 10px;background:#0f1d2b;color:#cfe3f5;border-radius:10px;padding:10px 12px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto}
+.log .empty{color:var(--muted);padding:6px 0;font-family:inherit}
+.loglinks{display:flex;gap:14px;font-size:12px;font-weight:600}
+.loglinks button{color:var(--navy2);text-decoration:underline;font-weight:600}
+.foot{font-size:12px;color:var(--muted);margin-top:22px}
+
+/* ---------- Phone ---------- */
+.phone{width:380px;max-width:calc(100vw - 32px);height:780px;border-radius:52px;background:#0c1520;padding:12px;box-shadow:0 30px 60px rgba(0,30,60,.28),inset 0 0 0 2px #2a3644}
+.screen{position:relative;height:100%;border-radius:41px;overflow:hidden;background:#f3f6fa}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:13px;font-weight:700;color:#fff;position:relative;z-index:5}
+.notch{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:110px;height:28px;border-radius:20px;background:#0c1520;z-index:6}
+.apphead{background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:0 22px 24px;margin-top:-44px;padding-top:56px}
+.brandrow{display:flex;justify-content:space-between;align-items:center}
+.wordmark{font-weight:800;letter-spacing:.04em;font-size:18px}
+.avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-weight:700;font-size:14px}
+.hello{margin:18px 0 4px;font-size:14px;opacity:.8}
+.acc{font-size:13px;opacity:.75}
+.bal{transform-origin:left center;font-size:32px;font-weight:800;margin-top:4px;letter-spacing:-.01em;min-height:39px}
+.quick{display:flex;gap:10px;margin-top:16px}
+.quick div{flex:1;background:rgba(255,255,255,.12);border-radius:12px;padding:9px 0;text-align:center;font-size:12px;font-weight:600}
+.body{padding:16px 18px 90px;height:calc(100% - 250px);overflow:auto}
+.sect{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:6px 4px 10px}
+.tx{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:12px;margin-bottom:8px}
+.tx .ti{width:38px;height:38px;border-radius:11px;background:#eef3f8;display:grid;place-items:center;font-size:18px;flex:none}
+.tx .tm{flex:1;min-width:0}
+.tx .tm b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .tm span{font-size:12px;color:var(--muted)}
+.tx .ta{font-weight:700;font-size:14px;white-space:nowrap}
+.tx.new{animation:pop .5s ease}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:70px;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;font-size:11px;color:var(--muted);padding-bottom:10px}
+.tabbar div{text-align:center}.tabbar i{display:block;font-style:normal;font-size:18px;margin-bottom:2px}
+.tabbar .act{color:var(--navy);font-weight:700}
+.tabbar button{font-size:11px;color:var(--muted);text-align:center}
+
+/* Overlays */
+.pay{position:absolute;inset:0;z-index:10;background:#f3f6fa;padding:60px 22px 24px;display:none;flex-direction:column}
+.pay.show{display:flex;animation:up .35s ease}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.pay h4{margin:0 0 20px;text-align:center;font-size:15px;color:var(--muted);font-weight:600}
+.paycard{background:#fff;border-radius:20px;padding:24px 20px;text-align:center;box-shadow:0 4px 14px rgba(0,40,80,.06)}
+.paycard .pi{font-size:40px}
+.paycard .pm{font-weight:700;margin-top:8px;word-break:break-word}
+.paycard .pd{font-size:13px;color:var(--muted);margin-top:2px;word-break:break-word}
+.paycard .pa{font-size:34px;font-weight:800;margin-top:14px;color:var(--navy)}
+.payrow{display:flex;justify-content:space-between;font-size:13px;padding:12px 4px;border-bottom:1px solid var(--line);color:var(--muted)}
+.payrow b{color:var(--ink)}
+.err{background:var(--bad-soft);color:#7a1f1f;border-radius:14px;padding:14px;font-size:14px;line-height:1.45;margin-bottom:14px}
+.btn{display:block;width:100%;padding:15px;border-radius:14px;background:var(--navy);color:#fff;font-weight:700;font-size:15px;text-align:center}
+.btn:disabled{background:#b6c4d3}
+.btn.sec{background:#e3eaf2;color:var(--navy)}
+.spacer{flex:1}
+.checkwrap{display:grid;place-items:center;height:100%;text-align:center}
+.checkwrap p{margin-top:16px;font-weight:700;color:var(--navy)}
+.bigcheck{width:84px;height:84px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:#fff;font-size:42px;animation:pop .4s ease;margin:auto}
+.spin{width:44px;height:44px;border-radius:50%;border:4px solid #d0dbe6;border-top-color:var(--navy);animation:rot .8s linear infinite;margin:auto}
+.btn .spin{width:16px;height:16px;border-width:3px;border-color:rgba(255,255,255,.35);border-top-color:#fff;display:inline-block;vertical-align:-3px;margin:0 8px 0 0}
+@keyframes rot{to{transform:rotate(360deg)}}
+.notif{position:absolute;top:50px;left:10px;right:10px;background:rgba(255,255,255,.97);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 10px 30px rgba(0,30,60,.25);z-index:20;transform:translateY(calc(-100% - 70px));transition:transform .45s cubic-bezier(.2,.9,.3,1)}
+.notif.show{transform:none}
+.notif .ni{width:36px;height:36px;border-radius:9px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800;font-size:11px;flex:none}
+.notif b{font-size:13px;display:block}.notif span{font-size:12px;color:var(--muted)}
+
+/* Whisper */
+.pill{position:absolute;top:268px;left:50%;transform:translate(-50%,-12px);background:#fff;border-radius:999px;padding:9px 16px 9px 12px;font-size:13px;font-weight:600;color:var(--navy);box-shadow:0 8px 24px rgba(0,48,94,.22);display:flex;gap:8px;align-items:center;opacity:0;pointer-events:none;transition:.45s cubic-bezier(.2,.9,.3,1.2);z-index:12;white-space:nowrap}
+.pill.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.spark{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),#7fd8ff);display:grid;place-items:center;color:#fff;font-size:12px;animation:glow 1.8s ease-in-out infinite;flex:none}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(0,174,239,.5)}50%{box-shadow:0 0 0 7px rgba(0,174,239,0)}}
+.scrim{position:absolute;inset:0;background:rgba(6,24,44,.35);opacity:0;pointer-events:none;transition:.3s;z-index:13}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border-radius:30px;padding:10px 20px 20px;transform:translateY(110%);transition:transform .45s cubic-bezier(.2,.9,.3,1);z-index:14;max-height:86%;overflow:auto}
+.sheet.show{transform:none}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 14px}
+.wlabel{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em}
+.sheet h3{margin:10px 0 6px;font-size:20px;color:var(--navy);line-height:1.25}
+.sheet p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+.ctx{display:flex;gap:10px;align-items:center;background:#f3f6fa;border-radius:14px;padding:10px 12px;margin:14px 0}
+.ctx .ti{font-size:20px}
+.ctx b{font-size:13px;display:block}.ctx span{font-size:12px;color:var(--muted)}
+.price{display:inline-block;background:var(--cyan-soft);color:var(--navy);font-weight:700;border-radius:8px;padding:4px 9px;font-size:13px;margin-top:2px}
+.why{font-size:13px;color:var(--navy2);font-weight:600;margin:14px 0 4px;text-decoration:underline;text-underline-offset:3px}
+.whybox{display:none;background:#f3f6fa;border-radius:12px;padding:10px 12px;margin-top:6px}
+.whybox.show{display:block}
+.whybox div{font-size:12px;color:var(--muted);padding:3px 0;line-height:1.4}
+.whybox div::before{content:"• ";color:var(--cyan)}
+.brow{display:flex;gap:10px;margin-top:16px}
+.brow .btn{flex:1}
+.mute{display:block;text-align:center;font-size:12px;color:var(--muted);margin-top:12px;width:100%}
+
+/* Flow screens */
+.flow{position:absolute;inset:0;z-index:10;background:#f3f6fa;display:none;flex-direction:column}
+.flow.show{display:flex;animation:up .3s ease}
+.fhead{background:#fff;padding:52px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.fhead button{width:34px;height:34px;border-radius:50%;background:#eef3f8;font-size:16px;flex:none}
+.fhead b{font-size:16px;flex:1}
+.fhead .stp{font-size:12px;color:var(--muted)}
+.fbody{flex:1;overflow:auto;padding:18px}
+.ffoot{padding:14px 18px 26px;background:#fff;border-top:1px solid var(--line)}
+.ffoot small{display:block;text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+.q{background:#fff;border-radius:16px;padding:14px;margin-bottom:12px}
+.qh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.qh b{font-size:14px}
+.badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.badge.partner{background:var(--ok-soft);color:var(--ok)}
+.badge.kbc{background:var(--kbc-soft);color:var(--kbc)}
+.badge.guess{background:var(--warn-soft);color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 12px;border-radius:10px;background:#eef3f8;font-size:13px;font-weight:600;color:var(--ink);border:2px solid transparent}
+.chip.on{background:var(--cyan-soft);border-color:var(--cyan);color:var(--navy)}
+.qnote{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}
+.qnote.warn{color:var(--warn);font-weight:600}
+.intro{font-size:14px;color:var(--muted);margin:0 0 14px;line-height:1.5}
+.plan{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;border:2px solid transparent;display:block;width:100%;text-align:left}
+.plan.on{border-color:var(--cyan)}
+.plan .pt{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.plan b{font-size:15px}
+.plan .pp{font-weight:800;color:var(--navy);font-size:16px;white-space:nowrap}
+.plan .pp small{font-size:12px;font-weight:600;color:var(--muted)}
+.plan ul{margin:8px 0 0;padding:0;list-style:none}
+.plan li{font-size:12.5px;color:var(--muted);padding:2px 0}
+.plan li::before{content:"✓ ";color:var(--ok);font-weight:700}
+.rec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--cyan);color:#fff;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:2px}
+.factors{background:#fff;border-radius:16px;padding:12px 14px;margin-top:6px}
+.factors b{font-size:13px}
+.factors div{font-size:12px;color:var(--muted);padding:3px 0}
+.illu{font-size:11px;color:var(--muted);text-align:center;margin-top:10px}
+.done{text-align:center;padding-top:30px}
+.done h3{color:var(--navy);font-size:22px;margin:18px 0 6px}
+.done p{color:var(--muted);font-size:14px;margin:0 0 20px;line-height:1.5}
+.pol{background:#fff;border-radius:16px;padding:14px;text-align:left}
+.pol div{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.pol div:last-child{border:0}
+.pol span{color:var(--muted)}
+.pol b{text-align:right}
+.phone .prow{background:#fff;border-radius:14px;padding:12px;margin-bottom:8px;border:0}
+.phone .used{display:none!important}
+.toast{position:absolute;left:50%;bottom:90px;transform:translate(-50%,20px);background:#12263a;color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:.3s;z-index:30;width:max-content;max-width:86%;text-align:center;pointer-events:none;line-height:1.4}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.bad{background:var(--bad)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- LEFT -->
+  <section>
+    <div class="toprow">
+      <div class="eyebrow">Concept demo · KBC Mobile</div>
+      <span class="apistat" id="apistat"><i></i><span>Connecting to backend…</span></span>
+    </div>
+    <h1>Whisper: the right suggestion, right after the money moves</h1>
+    <p class="lead">When a customer makes a substantial purchase or receives a bigger payout, the bank recognises what it is and gently suggests matching cover or a smart financial move. Every decision on this page is made by the Python backend.</p>
+
+    <div class="offline" id="offline">
+      <b>The backend isn't running.</b><br>
+      Start it from the project folder with <code>python run.py</code>, then retry.<br>
+      <button id="retry">Retry connection</button>
+    </div>
+
+    <p class="label">1 · Pick a moment</p>
+    <div class="scen" id="scen"></div>
+    <div class="seg subseg" id="subseg" style="display:none"></div>
+
+    <p class="label">2 · Where does the data come from?</p>
+    <div class="seg" id="seg">
+      <button data-m="recognition" class="on">Automatic bank recognition</button>
+      <button data-m="partner">Connected app</button>
+    </div>
+    <p class="modehint" id="modehint"></p>
+
+    <div class="runrow">
+      <button class="run" id="run" disabled>▶ Simulate the payment</button>
+      <button class="ghost" id="resetScreen">Reset screen</button>
+    </div>
+    <div class="endpoint" id="endpoint"></div>
+
+    <div class="how">
+      <h3>Behind the scenes <small id="stepsNote">Backend decision pipeline</small></h3>
+      <ol class="steps" id="steps"></ol>
+      <div id="stepsExtra"></div>
+    </div>
+
+    <p class="label" id="sharelabel" style="margin-top:26px">Connected apps</p>
+    <div class="share" id="share"></div>
+
+    <div class="how">
+      <h3>Live API calls
+        <span class="loglinks"><a id="docsLink" href="/docs" target="_blank" rel="noopener">API docs ↗</a><button id="resetData">Reset demo data</button></span>
+      </h3>
+      <ul class="log" id="log"><li class="empty">No calls yet.</li></ul>
+    </div>
+    <p class="foot">Concept prototype for discussion. Not an official KBC product. Partner names other than Ryanair and SD Worx are fictional; prices, tax figures and partner data are illustrative.</p>
+  </section>
+
+  <!-- PHONE -->
+  <section class="phone-col">
+    <div class="phone"><div class="screen" id="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+      <div class="apphead">
+        <div class="brandrow"><span class="wordmark">KBC</span><span class="avatar" id="av">·</span></div>
+        <div class="hello" id="hello">Hi</div>
+        <div class="acc" id="acc">Current account</div>
+        <div class="bal" id="bal"></div>
+        <div class="quick"><div>Pay</div><div>Transfer</div><div>Cards</div><div>Insure</div></div>
+      </div>
+      <div class="body" id="body"></div>
+      <div class="tabbar">
+        <div class="act"><i>⌂</i>Home</div><div><i>⇄</i>Payments</div><div><i>◎</i>Kate</div><div><i>☂</i>Insurance</div>
+        <button id="moreTab"><i style="display:block;font-style:normal;font-size:18px;margin-bottom:2px">🔗</i>Data sharing</button>
+      </div>
+      <div class="notif" id="notif"></div>
+      <div class="pay" id="pay"></div>
+      <div class="pill" id="pill"></div>
+      <div class="scrim" id="scrim"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="flow" id="flow"></div>
+      <div class="toast" id="toast"></div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   API client
+   ========================================================================== */
+const API = location.protocol.startsWith('http') ? '' : 'http://localhost:8000';
+class ApiError extends Error { constructor(msg, status){ super(msg); this.status = status; } }
+
+async function api(method, path, body){
+  const t0 = performance.now();
+  let res, data = null;
+  try {
+    res = await fetch(API + path, {
+      method,
+      headers: body !== undefined ? {'Content-Type': 'application/json'} : {},
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    logCall(method, path, 0, performance.now() - t0, body, {error: 'Network error: backend unreachable'});
+    setOnline(false);
+    throw new ApiError('The backend is not reachable. Start it with "python run.py".', 0);
+  }
+  const text = await res.text();
+  try { data = text ? JSON.parse(text) : null; } catch (e) { data = {raw: text}; }
+  logCall(method, path, res.status, performance.now() - t0, body, data);
+  if (!res.ok) throw new ApiError(errorText(data, res.status), res.status);
+  return data;
+}
+function errorText(data, status){
+  const d = data && data.detail;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) return d.map(x => x.msg).join('; ');
+  return `Request failed (${status})`;
+}
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(cents){
+  const neg = cents < 0, c = Math.abs(cents);
+  const euros = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (neg ? '− ' : '') + '€ ' + euros + ',' + String(c % 100).padStart(2, '0');
+}
+function signed(cents){ return (cents > 0 ? '+ ' : '− ') + fmt(Math.abs(cents)).slice(2); }
+function when(iso){
+  const d = new Date(iso), n = new Date();
+  if ((n - d) / 60000 < 5 && n >= d) return 'Just now';
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const days = Math.round((day(n) - day(d)) / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days > 1 && days < 7) return d.toLocaleDateString('en-GB', {weekday: 'short'});
+  return d.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+}
+function clock(iso){ return new Date(iso).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}); }
+
+/* ==========================================================================
+   State
+   ========================================================================== */
+const S = {
+  online: false, groups: [], scenarios: [], group: null, sub: {},
+  customer: null, consents: [], seenTx: new Set(), lastBalance: null,
+  analysis: null, whisper: null, answers: {}, quote: null, picked: new Set(),
+  token: 0, timers: [], busy: false, sharingOpen: false,
+};
+const scenario = () => {
+  const inGroup = S.scenarios.filter(s => s.group === S.group);
+  return inGroup.find(s => s.id === S.sub[S.group]) || inGroup[0];
+};
+const partnerConnected = () => {
+  const c = S.consents.find(x => x.id === scenario().partner_id);
+  return !!(c && c.connected);
+};
+const mode = () => partnerConnected() ? 'partner' : 'recognition';
+
+function later(fn, ms){
+  const t = S.token;
+  S.timers.push(setTimeout(() => { if (t === S.token) fn(); }, ms));
+}
+function clearTimers(){ S.timers.forEach(clearTimeout); S.timers = []; }
+
+/* ==========================================================================
+   Left panel rendering
+   ========================================================================== */
+function setOnline(on, info){
+  S.online = on;
+  const el = $('apistat');
+  el.className = 'apistat ' + (on ? 'on' : 'off');
+  el.querySelector('span').textContent = on ? `Backend connected · v${info?.version || ''}` : 'Backend offline';
+  $('offline').classList.toggle('show', !on);
+  $('run').disabled = !on || S.busy || !S.customer;
+}
+
+function renderScenarios(){
+  $('scen').innerHTML = S.groups.map(g => `<button class="sc ${g.id === S.group ? 'on' : ''}" data-g="${esc(g.id)}">
+    <div class="ic">${esc(g.icon)}</div><b>${esc(g.label)}</b><span>${esc(g.subtitle)}</span></button>`).join('');
+  const inGroup = S.scenarios.filter(s => s.group === S.group);
+  const sub = $('subseg');
+  sub.style.display = inGroup.length > 1 ? 'inline-flex' : 'none';
+  sub.innerHTML = inGroup.map(s => `<button data-s="${esc(s.id)}" class="${s.id === scenario().id ? 'on' : ''}">${esc(s.label)}</button>`).join('');
+}
+
+function renderMode(){
+  const m = mode(), sc = scenario();
+  document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  $('modehint').textContent = sc.explainer[m];
+  const inc = sc.transaction.direction === 'in';
+  $('run').textContent = inc ? '▶ Simulate the salary payout' : '▶ Simulate the payment';
+  $('endpoint').textContent = `→ POST /api/customers/${sc.customer_id}/transactions`;
+}
+
+function partnerRows(){
+  const cur = scenario().partner_id;
+  return S.consents.map(p => `<div class="prow ${p.id === cur ? 'cur' : ''}">
+    <div class="pic">${esc(p.icon)}</div>
+    <div class="pt2"><b>${esc(p.name)}</b>${p.id === cur ? '<span class="used" style="display:inline">this scenario</span>' : ''}
+      <span class="st ${p.connected ? 'on' : 'off'}" style="display:inline">${p.connected ? '● Connected' : '○ Not connected'}</span>
+      <span>${esc(p.scopes)}</span></div>
+    <button class="sw ${p.connected ? 'on' : ''}" data-pt="${esc(p.id)}" aria-label="Toggle ${esc(p.name)}"></button></div>`).join('');
+}
+function renderShare(){
+  $('sharelabel').textContent = `Apps ${S.customer ? S.customer.first_name : 'the customer'} shares data with`;
+  $('share').innerHTML = partnerRows();
+  if (S.sharingOpen) renderSharingScreen();
+}
+
+const PIPELINE = [
+  ['Transaction received', 'Core banking posts the payment to the Whisper API'],
+  ['Classified by the bank', 'Rules on merchant category, company registry and message keywords'],
+  ['Enriched via partner link', 'Only if the customer connected that app'],
+  ['Relevance check', 'Customer profile, existing KBC products, muted categories'],
+  ['Whisper decision', 'Show one quiet suggestion, or stay silent'],
+];
+function renderSteps(signals, lit = -1){
+  $('stepsExtra').innerHTML = '';
+  if (!signals){
+    $('stepsNote').textContent = 'Backend decision pipeline';
+    $('steps').innerHTML = PIPELINE.map((p, i) => `<li><div class="dot">${i + 1}</div><div><b>${p[0]}</b><span>${p[1]}</span></div></li>`).join('');
+    return;
+  }
+  $('stepsNote').textContent = 'Returned by the backend';
+  const tagFor = s => s.status === 'suppressed' ? '<span class="tag suppressed">SUPPRESSED</span>'
+    : s.source === 'partner' ? '<span class="tag partner">PARTNER DATA</span>'
+    : s.source === 'kbc' ? '<span class="tag kbc">KBC DATA</span>' : '<span class="tag bank">BANK DATA</span>';
+  $('steps').innerHTML = signals.map((s, i) => `<li class="${i <= lit ? 'lit' : ''} ${esc(s.status)}"><div class="dot">${i + 1}</div>
+    <div><b>${esc(s.title)}${tagFor(s)}</b><span>${esc(s.detail)}</span></div></li>`).join('');
+}
+function lightStep(i){ const li = $('steps').children[i]; if (li) li.classList.add('lit'); }
+
+/* ==========================================================================
+   Log panel
+   ========================================================================== */
+const LOG = [];
+function logCall(method, path, status, ms, req, res){
+  LOG.unshift({method, path, status, ms: Math.round(ms), req, res});
+  LOG.length = Math.min(LOG.length, 15);
+  const cut = o => { const s = JSON.stringify(o, null, 2); return s.length > 5000 ? s.slice(0, 5000) + '\n…' : s; };
+  $('log').innerHTML = LOG.map(l => `<li><details><summary>
+      <span class="m">${esc(l.method)}</span><span class="p">${esc(l.path)}</span>
+      <span class="s ${l.status >= 200 && l.status < 300 ? 'ok' : 'err'}">${l.status || 'ERR'}</span><span class="t">${l.ms} ms</span>
+    </summary>${l.req !== undefined ? `<pre>▲ request\n${esc(cut(l.req))}</pre>` : ''}<pre>▼ response\n${esc(cut(l.res))}</pre></details></li>`).join('');
+}
+
+/* ==========================================================================
+   Phone: home
+   ========================================================================== */
+function renderHome(){
+  const c = S.customer;
+  if (!c) return;
+  $('hello').textContent = 'Hi ' + c.first_name;
+  $('av').textContent = c.initials;
+  $('acc').textContent = 'Current account · ' + c.iban_masked;
+  $('bal').textContent = fmt(c.balance_cents);
+  if (S.lastBalance !== null && S.lastBalance !== c.balance_cents)
+    $('bal').animate([{transform: 'scale(1.08)'}, {transform: 'none'}], {duration: 450});
+  S.lastBalance = c.balance_cents;
+  $('body').innerHTML = '<div class="sect">Recent</div>' + c.transactions.map(t => {
+    const fresh = !S.seenTx.has(t.id);
+    S.seenTx.add(t.id);
+    return `<div class="tx ${fresh ? 'new' : ''}"><div class="ti">${esc(t.icon)}</div>
+      <div class="tm"><b>${esc(t.counterparty)}</b><span>${esc(when(t.booked_at))} · ${esc(t.category)}</span></div>
+      <div class="ta" style="color:${t.amount_cents > 0 ? 'var(--ok)' : 'var(--ink)'}">${signed(t.amount_cents)}</div></div>`;
+  }).join('');
+}
+async function refreshCustomer(){
+  S.customer = await api('GET', `/api/customers/${scenario().customer_id}`);
+  renderHome();
+}
+
+/* ==========================================================================
+   Scenario lifecycle
+   ========================================================================== */
+function resetScreen(){
+  S.token++; clearTimers();
+  S.analysis = null; S.whisper = null; S.quote = null; S.answers = {}; S.picked = new Set(); S.sharingOpen = false;
+  ['pay', 'flow'].forEach(i => $(i).classList.remove('show'));
+  ['pill', 'scrim', 'sheet', 'toast', 'notif'].forEach(i => $(i).classList.remove('show'));
+  renderSteps(null);
+}
+
+async function loadScenario(){
+  resetScreen();
+  renderScenarios();
+  const cid = scenario().customer_id;
+  const firstLoad = !S.customer || S.customer.id !== cid;
+  try {
+    const [cust, consents] = await Promise.all([
+      api('GET', `/api/customers/${cid}`), api('GET', `/api/customers/${cid}/consents`)]);
+    if (firstLoad){ S.seenTx = new Set(cust.transactions.map(t => t.id)); S.lastBalance = null; }
+    S.customer = cust; S.consents = consents;
+    renderMode(); renderShare(); renderHome();
+    setOnline(true, S.health);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function setConsent(partnerId, connected){
+  const cid = scenario().customer_id;
+  try {
+    const updated = await api('PUT', `/api/customers/${cid}/consents/${partnerId}`, {connected});
+    S.consents = S.consents.map(c => c.id === partnerId ? {...c, ...updated} : c);
+    renderShare(); renderMode();
+    if (partnerId === scenario().partner_id && S.analysis){
+      resetScreen();
+      toast(`${updated.name} ${connected ? 'connected' : 'disconnected'}. Run the scenario again to see the difference.`);
+    } else {
+      toast(`${updated.name} ${connected ? 'connected' : 'disconnected'}`);
+    }
+  } catch (e) { toast(e.message, true); renderShare(); }
+}
+
+async function start(){
+  if (S.busy || !S.online) return;
+  resetScreen();
+  const sc = scenario();
+  if (sc.transaction.direction === 'in') {
+    await postTransaction();
+  } else {
+    showPay();
+  }
+}
+
+function showPay(){
+  const tx = scenario().transaction, sc = scenario(), p = $('pay');
+  const desc = tx.channel === 'card' ? `Card payment · ${tx.message || 'Online'}` : `Transfer · “${tx.message}”`;
+  p.innerHTML = `<h4>Confirm payment</h4>
+    <div class="paycard"><div class="pi">${esc(sc.icon)}</div><div class="pm">${esc(tx.counterparty)}</div>
+      <div class="pd">${esc(desc)}</div><div class="pa">${fmt(tx.amount_cents)}</div></div>
+    <div style="margin-top:14px"><div class="payrow"><span>From</span><b>${esc(S.customer.iban_masked)}</b></div>
+      <div class="payrow"><span>Available</span><b>${fmt(S.customer.balance_cents)}</b></div></div>
+    <div class="spacer"></div>
+    <div id="payerr"></div>
+    <button class="btn" id="confirm">Confirm with fingerprint</button>
+    <button class="btn sec" id="cancelPay" style="margin-top:8px">Cancel</button>`;
+  p.classList.add('show');
+  $('confirm').onclick = () => postTransaction();
+  $('cancelPay').onclick = () => p.classList.remove('show');
+}
+
+async function postTransaction(){
+  const sc = scenario(), t = S.token, incoming = sc.transaction.direction === 'in';
+  S.busy = true; $('run').disabled = true;
+  if (!incoming){
+    $('confirm').disabled = true; $('cancelPay').disabled = true;
+    $('confirm').innerHTML = '<span class="spin"></span>Processing…';
+  }
+  let result;
+  try {
+    result = await api('POST', `/api/customers/${sc.customer_id}/transactions`, sc.transaction);
+  } catch (e) {
+    S.busy = false; setOnline(S.online, S.health);
+    if (t !== S.token) return;
+    if (incoming) { toast(e.message, true); return; }
+    $('payerr').innerHTML = `<div class="err">${esc(e.message)}${e.status === 409 ? '<br><button class="unmute" id="payReset">Reset demo data</button>' : ''}</div>`;
+    if ($('payReset')) $('payReset').onclick = resetDemoData;
+    $('confirm').style.display = 'none';
+    $('cancelPay').disabled = false; $('cancelPay').textContent = 'Back';
+    return;
+  }
+  S.busy = false; setOnline(true, S.health);
+  if (t !== S.token) return;
+  S.analysis = result.analysis;
+  renderSteps(result.analysis.signals);
+  lightStep(0);
+  if (incoming){
+    const tx = result.transaction;
+    $('notif').innerHTML = `<div class="ni">KBC</div><div><b>You received ${fmt(tx.amount_cents)}</b><span>From ${esc(tx.counterparty)} · ${esc(tx.message)}</span></div>`;
+    $('notif').classList.add('show');
+    refreshCustomer().catch(e => toast(e.message, true));
+    later(() => $('notif').classList.remove('show'), 2400);
+    playAnalysis(1400);
+  } else {
+    $('pay').innerHTML = '<div class="checkwrap"><div><div class="bigcheck">✓</div><p>Payment sent</p></div></div>';
+    later(() => { $('pay').classList.remove('show'); refreshCustomer().catch(e => toast(e.message, true)); }, 1100);
+    playAnalysis(1500);
+  }
+}
+
+function playAnalysis(delay){
+  const a = S.analysis, n = a.signals.length;
+  for (let i = 1; i < n; i++) later(() => lightStep(i), delay + (i - 1) * 650);
+  const end = delay + (n - 1) * 650;
+  if (a.whisper){
+    S.whisper = a.whisper;
+    later(showPill, end);
+  } else {
+    later(() => {
+      toast(a.decision.code === 'not_relevant' ? 'No whisper: nothing relevant to suggest.' : `No whisper: ${a.decision.reason}.`);
+      if (a.decision.code === 'muted'){
+        $('stepsExtra').innerHTML = `<button class="unmute" id="unmute">Turn ${esc(a.category_label)} suggestions back on</button>`;
+        $('unmute').onclick = unmute;
+      }
+    }, end);
+  }
+}
+
+async function unmute(){
+  try {
+    await api('DELETE', `/api/customers/${scenario().customer_id}/mutes/${S.analysis.category}`);
+    $('stepsExtra').innerHTML = '';
+    toast('Suggestions are back on. Run the scenario again.');
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ==========================================================================
+   Whisper sheet
+   ========================================================================== */
+function showPill(){
+  const pill = $('pill');
+  pill.innerHTML = `<span class="spark">✦</span>${esc(S.whisper.pill)}`;
+  pill.classList.add('show');
+  later(openSheet, 1800);
+}
+function openSheet(){
+  clearTimers();
+  $('pill').classList.remove('show'); $('notif').classList.remove('show');
+  const w = S.whisper;
+  if (!w) return;
+  $('sheet').innerHTML = `<div class="grab"></div>
+    <div class="wlabel"><span class="spark">✦</span>Whisper</div>
+    <h3>${esc(w.title)}</h3><p>${esc(w.body)}</p>
+    <div class="ctx"><div class="ti">${esc(w.context.icon)}</div><div><b>${esc(w.context.title)}</b><span>${esc(w.context.subtitle)}</span></div></div>
+    <span class="price">${esc(w.teaser)}</span>
+    <button class="why" id="why">Why am I seeing this?</button>
+    <div class="whybox" id="whybox">${w.reasons.map(r => `<div>${esc(r)}</div>`).join('')}<div>${esc(w.privacy_note)}</div></div>
+    <div class="brow"><button class="btn sec" id="later">Not now</button><button class="btn" id="go">Show me</button></div>
+    <button class="mute" id="mute">Don't send me suggestions like this again</button>`;
+  $('scrim').classList.add('show'); $('sheet').classList.add('show');
+  $('why').onclick = () => $('whybox').classList.toggle('show');
+  $('later').onclick = () => feedback('dismissed', 'No problem. We won\'t mention it again for this one.');
+  $('mute').onclick = () => feedback('muted', 'Got it. You won\'t get suggestions like this any more.');
+  $('go').onclick = async () => {
+    try { await api('POST', `/api/whispers/${w.id}/feedback`, {action: 'opened'}); }
+    catch (e) { toast(e.message, true); return; }
+    closeSheet(); openQuestions();
+  };
+}
+function closeSheet(){ $('scrim').classList.remove('show'); $('sheet').classList.remove('show'); }
+async function feedback(action, message){
+  const w = S.whisper;
+  closeSheet();
+  try { await api('POST', `/api/whispers/${w.id}/feedback`, {action}); toast(message); S.whisper = null; }
+  catch (e) { toast(e.message, true); }
+}
+function toast(text, bad = false){
+  const el = $('toast');
+  el.textContent = text; el.classList.toggle('bad', bad); el.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), bad ? 4200 : 2800);
+}
+
+/* ==========================================================================
+   Questions → quote → accept
+   ========================================================================== */
+function openQuestions(){
+  S.answers = {};
+  S.whisper.form.questions.forEach(q => { if (q.prefill) S.answers[q.id] = q.prefill.value; });
+  S.sharingOpen = false;
+  renderQuestions();
+  $('flow').classList.add('show');
+}
+function renderQuestions(){
+  const f = S.whisper.form;
+  const ok = f.questions.every(q => S.answers[q.id]);
+  $('flow').innerHTML = `<div class="fhead"><button id="back" aria-label="Back">←</button><b>${esc(f.title)}</b><span class="stp">1 / 2</span></div>
+    <div class="fbody"><p class="intro">${esc(f.intro)}</p>
+    ${f.questions.map(q => {
+      const pre = q.prefill && S.answers[q.id] === q.prefill.value ? q.prefill : null;
+      const on = S.answers[q.id];
+      const optNote = on && q.option_notes[on];
+      const note = optNote ? `<div class="qnote ${optNote.level === 'warn' ? 'warn' : ''}">📍 ${esc(optNote.text)}</div>`
+        : q.note ? `<div class="qnote">${esc(q.note)}</div>` : '';
+      return `<div class="q"><div class="qh"><b>${esc(q.label)}</b>${pre ? `<span class="badge ${esc(pre.kind)}">${esc(pre.label)}</span>` : ''}</div>
+        <div class="chips">${q.options.map(o => `<button class="chip ${on === o ? 'on' : ''}" data-q="${esc(q.id)}" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>${note}</div>`;
+    }).join('')}</div>
+    <div class="ffoot"><button class="btn" id="toQuote" ${ok ? '' : 'disabled'}>${esc(f.submit_label)}</button><small>Prices are calculated by the backend</small></div>`;
+  $('back').onclick = () => $('flow').classList.remove('show');
+  $('toQuote').onclick = requestQuote;
+}
+async function requestQuote(){
+  const btn = $('toQuote');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Calculating…';
+  try {
+    S.quote = await api('POST', `/api/whispers/${S.whisper.id}/quotes`, {answers: S.answers});
+  } catch (e) { toast(e.message, true); renderQuestions(); return; }
+  const rec = S.quote.items.filter(i => i.recommended).map(i => i.id);
+  S.picked = new Set(S.quote.selection === 'single' ? [rec[0] || S.quote.items[0].id] : rec);
+  renderQuote();
+}
+function renderQuote(){
+  const q = S.quote, multi = q.selection === 'multiple';
+  const chosen = q.items.filter(i => S.picked.has(i.id));
+  const total = chosen.reduce((t, i) => t + i.charge_now_cents, 0);
+  const label = !chosen.length ? 'Select at least one'
+    : multi ? `Set up ${chosen.length} action${chosen.length === 1 ? '' : 's'} · ${fmt(total)} today`
+    : `Get ${chosen[0].name} · ${fmt(chosen[0].price_cents)} ${chosen[0].price_unit}`;
+  $('flow').innerHTML = `<div class="fhead"><button id="back" aria-label="Back">←</button><b>${esc(q.title)}</b><span class="stp">2 / 2</span></div>
+    <div class="fbody"><p class="intro">${esc(q.intro)}</p>
+    ${q.items.map(i => `<button class="plan ${S.picked.has(i.id) ? 'on' : ''}" data-i="${esc(i.id)}">
+      <div class="pt"><b>${multi ? (S.picked.has(i.id) ? '☑ ' : '☐ ') : ''}${esc(i.name)}${i.recommended ? '<span class="rec">Advised</span>' : ''}</b>
+      <span class="pp">${fmt(i.price_cents)} <small>${esc(i.price_unit)}</small></span></div>
+      <ul>${i.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul></button>`).join('')}
+    <div class="factors"><b>What shaped this ${multi ? 'plan' : 'price'}</b>${q.factors.map(f => `<div>• ${esc(f)}</div>`).join('')}</div>
+    <div class="illu">Illustrative figures for this concept demo${multi ? '. Not tax advice' : ''}.</div></div>
+    <div class="ffoot"><button class="btn" id="buy" ${chosen.length ? '' : 'disabled'}>${esc(label)}</button>
+      <small>Quote ${esc(q.id.slice(0, 8))} · valid until ${esc(clock(q.expires_at))}</small></div>`;
+  $('back').onclick = renderQuestions;
+  $('buy').onclick = acceptQuote;
+}
+async function acceptQuote(){
+  const btn = $('buy');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Confirming…';
+  let r;
+  try {
+    r = await api('POST', `/api/quotes/${S.quote.id}/accept`, {item_ids: [...S.picked]});
+  } catch (e) {
+    toast(e.message, true);
+    if (e.status === 410) renderQuestions(); else renderQuote();
+    return;
+  }
+  renderDone(r);
+}
+function renderDone(r){
+  const multi = S.quote.selection === 'multiple';
+  refreshCustomer().catch(e => toast(e.message, true));   // keep balance + statement in sync right away
+  $('flow').innerHTML = `<div class="fbody"><div class="done"><div class="bigcheck" style="margin-top:40px">✓</div>
+    <h3>${multi ? 'All set' : 'You\'re covered'}</h3>
+    <p>${multi ? 'Your action plan is set up.' : 'Your cover starts today. Documents are in your KBC inbox.'}</p>
+    <div class="pol">${r.accepted.map(i => `<div><span>${esc(i.name)}</span><b>${fmt(i.price_cents)} ${esc(i.price_unit)}</b></div>`).join('')}
+      <div><span>Debited today</span><b>− ${fmt(r.total_charged_cents)}</b></div>
+      <div><span>New balance</span><b>${fmt(r.balance_cents)}</b></div></div></div></div>
+    <div class="ffoot"><button class="btn" id="home">Back to home</button></div>`;
+  $('home').onclick = () => {
+    $('flow').classList.remove('show');
+    S.whisper = null;
+    toast(multi ? 'Added to your plan ✓' : 'Added to your insurances ☂');
+  };
+}
+
+/* ==========================================================================
+   Data sharing screen (in the phone)
+   ========================================================================== */
+function renderSharingScreen(){
+  S.sharingOpen = true;
+  $('flow').innerHTML = `<div class="fhead"><button id="back" aria-label="Back">←</button><b>Data sharing</b></div>
+    <div class="fbody"><p class="intro">Apps you allow to share data with KBC, so suggestions need fewer questions. KBC never shares your transactions with them.</p>
+    ${partnerRows()}
+    <p class="qnote" style="margin-top:14px">Not connected? KBC can still recognise purchases and payouts from your own transactions, and simply asks for the details it can't see.</p></div>`;
+  $('flow').classList.add('show');
+  $('back').onclick = () => { S.sharingOpen = false; $('flow').classList.remove('show'); };
+}
+
+/* ==========================================================================
+   Events + boot
+   ========================================================================== */
+$('scen').onclick = e => { const b = e.target.closest('[data-g]'); if (b && b.dataset.g !== S.group){ S.group = b.dataset.g; loadScenario(); } };
+$('subseg').onclick = e => { const b = e.target.closest('[data-s]'); if (b){ S.sub[S.group] = b.dataset.s; loadScenario(); } };
+$('seg').onclick = e => {
+  const b = e.target.closest('[data-m]');
+  if (b && (b.dataset.m === 'partner') !== partnerConnected()) setConsent(scenario().partner_id, b.dataset.m === 'partner');
+};
+$('share').onclick = e => { const b = e.target.closest('[data-pt]'); if (b){ b.disabled = true; const c = S.consents.find(x => x.id === b.dataset.pt); setConsent(c.id, !c.connected); } };
+$('flow').addEventListener('click', e => {
+  const t = e.target.closest('[data-pt]');
+  if (t){ const c = S.consents.find(x => x.id === t.dataset.pt); setConsent(c.id, !c.connected); return; }
+  const chip = e.target.closest('.chip');
+  if (chip){ S.answers[chip.dataset.q] = chip.dataset.o; renderQuestions(); return; }
+  const plan = e.target.closest('.plan');
+  if (plan && S.quote){
+    const id = plan.dataset.i;
+    if (S.quote.selection === 'single') S.picked = new Set([id]);
+    else S.picked.has(id) ? S.picked.delete(id) : S.picked.add(id);
+    renderQuote();
+  }
+});
+$('moreTab').onclick = () => { clearTimers(); closeSheet(); $('pill').classList.remove('show'); renderSharingScreen(); };
+$('run').onclick = start;
+$('resetScreen').onclick = () => { resetScreen(); refreshCustomer().catch(e => toast(e.message, true)); };
+async function resetDemoData(){
+  if (S.busy) return;
+  try { await api('POST', '/api/demo/reset'); S.customer = null; await loadScenario(); toast('Demo data reset: balances, consents and contracts are back to the start.'); }
+  catch (e) { toast(e.message, true); }
+}
+$('resetData').onclick = resetDemoData;
+$('pill').onclick = openSheet;
+$('scrim').onclick = closeSheet;
+$('retry').onclick = boot;
+$('docsLink').href = API + '/docs';
+
+async function boot(){
+  renderSteps(null);
+  try {
+    S.health = await api('GET', '/api/health');
+    const [sc, partners] = await Promise.all([api('GET', '/api/scenarios'), api('GET', '/api/partners')]);
+    S.groups = sc.groups; S.scenarios = sc.scenarios;
+    S.consents = partners.map(p => ({...p, connected: false}));
+    if (!S.group) S.group = S.groups[0].id;
+    setOnline(true, S.health);
+    await loadScenario();
+  } catch (e) {
+    setOnline(false);
+  }
+}
+boot();
+</script>
+</body>
+</html>
