@@ -4,6 +4,8 @@ This repository contains the interactive mobile UI frontend connected to a light
 
 
 📁 Project Structure
+
+
 Make sure your files are arranged in the following structure (Flask requires `index.html` to be inside a `templates/` folder):
 ```text
 kbc-whisper-poc/
