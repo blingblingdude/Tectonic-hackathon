@@ -1,4 +1,6 @@
 # KBC Whisper: proof of concept
+the link to video (bcs it was too large):
+https://drive.google.com/file/d/1BQSKlyDuId-uXyV-2dTSI4A0pFvPjens/view?usp=sharing
 
 A clickable demo of **Whisper**: right after a customer makes a substantial purchase (a flight, a car, a new rental) or receives a bigger payout (a bonus via SD Worx), the bank recognises what happened and suggests fitting insurance or a smart financial move.
 
